@@ -100,7 +100,7 @@ function getGenderFromName($fullname){
     if (mb_substr($parts['patronymic'], -2, 2) === 'ич'){
         $gender++;
     };
-    if (mb_substr($parts['name'], -1, 1) === 'й' || 'н'){
+    if (mb_substr($parts['name'], -1, 1) === 'й' || mb_substr($parts['name'], -1, 1) === 'н'){
         $gender++;
     };
     if (mb_substr($parts['surname'], -1, 1) === 'в'){
@@ -154,23 +154,37 @@ function getGenderDescription($persons_array){
 // Поиск идеального партнера
 
 function getPerfectPartner($surname, $name, $patronymic, $persons_array){
+
+    // приведение к привычному регистру
     $transformSurname = mb_convert_case($surname, MB_CASE_TITLE);
     $transformName = mb_convert_case($name, MB_CASE_TITLE);
     $transformPatronymic = mb_convert_case($patronymic, MB_CASE_TITLE);
-    
+
+    // Склеивание фио
     $fullname = getFullnameFromParts($transformSurname, $transformName, $transformPatronymic);
+
+    // Определение пола
+    $mainGender = getGenderFromName($fullname);
+
+    // Выбор случайного человека из массива  и определение его пола
+    $randomPerson = $persons_array[rand(0, count($persons_array) -1)]['fullname'];
+    $randomGender = getGenderFromName($randomPerson);
+
+    // Проверка на противоположный пол случайного человека
+    while($randomGender == $mainGender || $randomGender == 0){
+        $randomPerson = $persons_array[rand(0, count($persons_array) -1)]['fullname'];
+        $randomGender = getGenderFromName($randomPerson);
+    }
+
+    // Сокращение подходящих имён
     $shortFullname = getShortName($fullname);
-    $gender = getGenderFromName($fullname);
-    
-    $partners = array_filter($persons_array, function ($person) use ($gender){
-        $personGender = getGenderFromName($person['fullname']);
-        return $personGender === -$gender;
-    });
-    $randPartner = $partners[array_rand($partners)];
-    $compatibility_percentage = round(mt_rand(5000, 10000) / 100, 2);
-    $partnerShortName = getShortName($randPartner['fullname']);
-    
+    $partnerShortName = getShortName($randomPerson);
+
+    // Получение процентов идеального совпадения
+    $percent = rand(50,100)+rand(0,99)/100;
+
+    // Возвращение результата
     $result = $shortFullname . ' + ' . $partnerShortName . ' =' . PHP_EOL;
-    $result .= '♡ Идеально на ' . $compatibility_percentage . '% ♡';
+    $result .= '♡ Идеально на ' . $percent . '% ♡';
     return $result;
 };
